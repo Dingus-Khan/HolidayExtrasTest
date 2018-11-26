@@ -1,0 +1,213 @@
+﻿@model UserAPIWebApp.Models.IndexViewModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User API | Index</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+</head>
+<body>
+    <header class="container bg-light">
+        <div class="row">
+            <div class="col-12">
+                <h1>Holiday Extras User API Test</h1>
+                <p>This is just a simple front end I built to work with the API I was tasked with creating. It just adds an interface for the main features of the API itself. </p>
+            </div>
+        </div>
+    </header>
+
+    <main class="container bg-light mt-3">
+        <div class="row">
+            <div class="col-12">
+                <h3>Users</h3>
+                <table class="table table-striped table-sm table-hover table-bordered" id="UserTable">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Email</th>
+                            <th>Given Name</th>
+                            <th>Family Name</th>
+                            <th>Date Created</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Users)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.Email</td>
+                                <td>@item.GivenName</td>
+                                <td>@item.FamilyName</td>
+                                <td>@item.DateCreated.ToShortDateString()</td>
+                                <td><button class="btn btn-default" type="button" onclick="UpdateUserModal(@item.Id, '@item.GivenName', '@item.FamilyName', '@item.Email')">Update</button></td>
+                                <td><button class="btn btn-danger" type="button" onclick="DeleteUser(@item.Id)">Delete</button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <button class="btn btn-default float-right mb-3" type="button" onclick="$('#CreateModal').modal();">Create User</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="UpdateModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update User <span id="UpdateUserId"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form>
+                    <div class="modal-body">
+                        <p>Please use the form below to edit this user.</p>
+                        <div class="row">
+                            <div class="col-4 mb-3"><label class="font-weight-bold">Given Name</label></div>
+                            <div class="col-8"><input class="form-control" type="text" name="UpdateGivenName" id="UpdateGivenName" required /></div>
+                            <div class="col-4 mb-3"><label class="font-weight-bold">Family Name</label></div>
+                            <div class="col-8"><input class="form-control" type="text" name="UpdateFamilyName" id="UpdateFamilyName" required /></div>
+                            <div class="col-4 mb-3"><label class="font-weight-bold">Email Address</label></div>
+                            <div class="col-8"><input class="form-control" type="email" name="UpdateEmail" id="UpdateEmail" required /></div>
+                            <input type="hidden" id="UpdateUserIdInput" value="" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" type="button" data-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="button" onclick="UpdateUser()">Update User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="CreateModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create User</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <form>
+                    <div class="modal-body">
+                        <p>Please use the form below to create a new user.</p>
+                        <div class="row">
+                            <div class="col-4 mb-3"><label class="font-weight-bold">Given Name</label></div>
+                            <div class="col-8"><input class="form-control" type="text" name="NewGivenName" id="NewGivenName" required /></div>
+                            <div class="col-4 mb-3"><label class="font-weight-bold">Family Name</label></div>
+                            <div class="col-8"><input class="form-control" type="text" name="NewFamilyName" id="NewFamilyName" required /></div>
+                            <div class="col-4 mb-3"><label class="font-weight-bold">Email Address</label></div>
+                            <div class="col-8"><input class="form-control" type="email" name="NewEmail" id="NewEmail" required /></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" type="button" data-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="button" onclick="CreateNewUser()">Create User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // AJAX function for creating a new user
+        function UpdateUserList() {
+            $('#UserTable tbody')[0].innerHTML = "";
+
+            $.get('/api/getusers', '', function (data, status, xhr) {
+                if (data !== undefined) {
+                    // rebuild table with results
+                    var rows = "";
+                    data.forEach(function (elem) {
+                        var time = Date.parse(elem.dateCreated);
+                        var date = new Date();
+                        date.setTime(time);
+
+                        rows += $('#UserRowTemplate')[0].innerHTML.replace(/%id%/g, elem.id)
+                            .replace(/%email%/g, elem.email)
+                            .replace(/%gname%/g, elem.givenName)
+                            .replace(/%fname%/g, elem.familyName)
+                            .replace(/%date%/g, date.toLocaleDateString("en-GB")); 
+                    });
+                    $('#UserTable tbody')[0].innerHTML = rows;
+                }
+            }, 'json');
+        }
+
+        function CreateNewUser() {
+            var user = {
+                'GivenName': $('#NewGivenName').val(),
+                'FamilyName': $('#NewFamilyName').val(),
+                'Email': $('#NewEmail').val()
+            };
+
+            $.post('/api/createuser', JSON.stringify(user), function (data, status, xhr) {
+                UpdateUserList();
+                $('#CreateModal').modal('hide');
+                alert('Created user ' + data);
+            }, 'text');
+        }
+
+        function UpdateUserModal(id, gname, fname, email) {
+            $('#UpdateUserId')[0].innerText = id;
+            $('#UpdateUserIdInput').val(id);
+            $('#UpdateGivenName').val(gname);
+            $('#UpdateFamilyName').val(fname);
+            $('#UpdateEmail').val(email);
+            $('#UpdateModal').modal();
+        }
+
+        function UpdateUser() {
+            var user = {
+                'Id': $('#UpdateUserIdInput').val(),
+                'GivenName': $('#UpdateGivenName').val(),
+                'FamilyName': $('#UpdateFamilyName').val(),
+                'Email': $('#UpdateEmail').val()
+            };
+
+            $.post('/api/updateuser', JSON.stringify(user), function (data, status, xhr) {
+                UpdateUserList();
+                $('#UpdateModal').modal('hide');
+                alert('Updated user ' + data);
+            }, 'text');
+        }
+
+        function DeleteUser(id) {
+            if (confirm('Are you sure you wish to delete user ' + id)) {
+                $.ajax({
+                    url: '/api/deleteuser/' + id, 
+                    method: 'DELETE',
+                    success: function (data, status, xhr) {
+                        UpdateUserList();
+                        if (data === true) {
+                            alert('deleted user ' + id);
+                        } else {
+                            alert('failed to delete user ' + id);
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.bundle.min.js" integrity="sha384-pjaaA8dDz/5BgdFUPX6M/9SUZv4d12SUPF0axWc+VRZkx5xU3daN+lYb49+Ax+Tl" crossorigin="anonymous"></script>
+</body>
+</html>
+
+<template id="UserRowTemplate">
+    <tr>
+        <td>%id%</td>
+        <td>%email%</td>
+        <td>%gname%</td>
+        <td>%fname%</td>
+        <td>%date%</td>
+        <td><button class="btn btn-default" type="button" onclick="UpdateUserModal(%id%, '%gname%', '%fname%', '%email%');">Update</button></td>
+        <td><button class="btn btn-danger" type="button" onclick="DeleteUser(%id%);">Delete</button></td>
+    </tr>
+</template>
